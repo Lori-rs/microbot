@@ -220,6 +220,9 @@ public class AgilityScript extends Script {
                             continue;
                         if (!Rs2Walker.canReach(markOfGraceTile.getTile().getWorldLocation()))
                             continue;
+                        if (markOfGraceTile.getTile().getWorldLocation().distanceTo(Microbot.getClient().getLocalPlayer().getWorldLocation()) <= 5) {
+                            continue;
+                        }
                         Rs2GroundItem.loot(markOfGraceTile.getItem().getId());
                         Rs2Player.waitForWalking();
                         return;

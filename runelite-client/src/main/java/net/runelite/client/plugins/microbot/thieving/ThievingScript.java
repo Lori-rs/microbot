@@ -7,6 +7,7 @@ import net.runelite.client.game.npcoverlay.HighlightedNpc;
 import net.runelite.client.plugins.microbot.Microbot;
 import net.runelite.client.plugins.microbot.Script;
 import net.runelite.client.plugins.microbot.thieving.enums.ThievingNpc;
+import net.runelite.client.plugins.microbot.util.antiban.Rs2Antiban;
 import net.runelite.client.plugins.microbot.util.bank.Rs2Bank;
 import net.runelite.client.plugins.microbot.util.equipment.Rs2Equipment;
 import net.runelite.client.plugins.microbot.util.inventory.Rs2Inventory;
@@ -17,6 +18,7 @@ import net.runelite.client.plugins.microbot.util.player.Rs2Player;
 import net.runelite.client.plugins.microbot.util.walker.Rs2Walker;
 import net.runelite.client.plugins.skillcalculator.skills.MagicAction;
 import net.runelite.client.plugins.timersandbuffs.GameTimer;
+import net.runelite.client.plugins.microbot.util.antiban.Rs2Antiban;
 
 import java.util.Arrays;
 import java.util.List;
@@ -31,8 +33,13 @@ public class ThievingScript extends Script {
 
     boolean isPickpocketting = false;
 
+
     public boolean run(ThievingConfig config) {
         this.config = config;
+
+        Rs2Antiban.resetAntibanSettings();
+        Rs2Antiban.antibanSetupTemplates.applyThievingSetup();
+
         Rs2Walker.setTarget(null);
         mainScheduledFuture = scheduledExecutorService.scheduleWithFixedDelay(() -> {
             try {
@@ -69,7 +76,7 @@ public class ThievingScript extends Script {
             } catch (Exception ex) {
                 System.out.println(ex.getMessage());
             }
-        }, 0, 600, TimeUnit.MILLISECONDS);
+        }, 0, 400, TimeUnit.MILLISECONDS);
         return true;
     }
 
@@ -93,11 +100,11 @@ public class ThievingScript extends Script {
         if (highlightedNpcs.isEmpty()) {
             if (Rs2Npc.pickpocket(npc)) {
                 Rs2Walker.setTarget(null);
-                sleep(50, 250);
+                sleep(35, 175);
             }
         } else {
             if (Rs2Npc.pickpocket(highlightedNpcs)) {
-                sleep(50, 250);
+                sleep(35, 175);
             }
         }
     }
