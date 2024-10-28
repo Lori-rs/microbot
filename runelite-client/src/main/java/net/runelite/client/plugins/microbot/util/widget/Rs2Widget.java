@@ -32,14 +32,13 @@ public class Rs2Widget {
         return Microbot.getClientThread().runOnClientThread(() -> {
             Widget rootWidget = getWidget(widgetId, childId);
             Widget widget = null;
-            if (rootWidget == null) return false;
             if (rootWidget.getChildren() != null)
                 widget = findWidget(text, Arrays.stream(rootWidget.getChildren()).filter(x -> x != null && !x.isHidden()).collect(Collectors.toList()), exact);
-            if (widget == null && rootWidget.getNestedChildren().length > 0)
+            if (rootWidget.getNestedChildren().length > 0)
                 widget =  findWidget(text, Arrays.stream(rootWidget.getNestedChildren()).filter(x -> x != null && !x.isHidden()).collect(Collectors.toList()), exact);
-            if (widget == null && rootWidget.getDynamicChildren().length > 0)
+            if (rootWidget.getDynamicChildren().length > 0)
                 widget = findWidget(text, Arrays.stream(rootWidget.getDynamicChildren()).filter(x -> x != null && !x.isHidden()).collect(Collectors.toList()), exact);
-            if (widget == null && rootWidget.getStaticChildren().length > 0)
+            if (rootWidget.getStaticChildren().length > 0)
                 widget = findWidget(text, Arrays.stream(rootWidget.getStaticChildren()).filter(x -> x != null && !x.isHidden()).collect(Collectors.toList()), exact);
 
             return widget != null;
@@ -57,7 +56,7 @@ public class Rs2Widget {
                 Widget rootWidget = getWidget(widgetId.get(), childId);
                 List<Widget> rootWidgets = new ArrayList<>();
                 rootWidgets.add(rootWidget);
-                widget  = findWidget(text, rootWidgets, exact);
+                widget  = findWidget(text, rootWidgets, true);
             }
 
             if (widget != null) {
@@ -119,6 +118,7 @@ public class Rs2Widget {
         });
     }
 
+
     public static Widget getWidget(int id, int child) {
         return Microbot.getClientThread().runOnClientThread(() -> Microbot.getClient().getWidget(id, child));
     }
@@ -159,7 +159,6 @@ public class Rs2Widget {
             if (children == null) {
                 List<Widget> rootWidgets = Arrays.stream(Microbot.getClient().getWidgetRoots()).filter(x -> x != null && !x.isHidden()).collect(Collectors.toList());
                 for (Widget rootWidget : rootWidgets) {
-                    if (rootWidget == null) continue;
                     if (exact) {
                         String cleanText = rootWidget.getText() != null ? rootWidget.getText().replaceAll("<col=[^>]+>|</col>", "") : "";
                         String cleanName = rootWidget.getName() != null ? rootWidget.getName().replaceAll("<col=[^>]+>|</col>", "") : "";
@@ -211,7 +210,6 @@ public class Rs2Widget {
     public static Widget searchChildren(String text, Widget child, boolean exact) {
         return Microbot.getClientThread().runOnClientThread(() -> {
             Widget found = null;
-            if (child == null) return null;
             if (exact) {
                 String cleanText = child.getText() != null ? child.getText().replaceAll("<col=[^>]+>|</col>", "") : "";
                 String cleanName = child.getName() != null ? child.getName().replaceAll("<col=[^>]+>|</col>", "") : "";
@@ -359,17 +357,4 @@ public class Rs2Widget {
     public static boolean isDepositBoxWidgetOpen() {
         return isWidgetVisible(ComponentID.DEPOSIT_BOX_INVENTORY_ITEM_CONTAINER);
     }
-
-    public static boolean isWildernessInterfaceOpen() {
-        return isWidgetVisible(475, 11);
-    }
-    public static boolean enterWilderness() {
-        if (!isWildernessInterfaceOpen()) return false;
-
-        Microbot.log("Detected Wilderness warning, interacting...");
-        Rs2Widget.clickWidget(475, 11);
-
-        return true;
-    }
-
 }

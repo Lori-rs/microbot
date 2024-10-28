@@ -58,13 +58,11 @@ import java.util.regex.Pattern;
 public class ShootingStarPlugin extends Plugin {
     @Getter
     public List<Star> starList = new ArrayList<>();
-    @Getter
-    public List<Star> ignoreStars = new ArrayList<>();
-
+    
     @Inject
     ShootingStarScript shootingStarScript;
 
-    public static String version = "1.1.1";
+    public static String version = "1.1.0";
     private String httpEndpoint;
     
     @Getter
@@ -408,7 +406,6 @@ public class ShootingStarPlugin extends Plugin {
 
         // Iterate through all stars and categorize them by distance
         for (Star star : starList) {
-            if (ignoreStars.contains(star)) continue;
             if (panel.getHiddenStars().stream().anyMatch(h -> h.equals(star))) continue;
             if (!star.hasRequirements()) continue;
 
