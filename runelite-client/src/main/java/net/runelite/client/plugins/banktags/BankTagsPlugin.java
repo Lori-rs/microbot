@@ -68,6 +68,7 @@ import net.runelite.client.plugins.banktags.tabs.LayoutManager;
 import net.runelite.client.plugins.banktags.tabs.TabInterface;
 import static net.runelite.client.plugins.banktags.tabs.TabInterface.FILTERED_CHARS;
 import net.runelite.client.plugins.banktags.tabs.TabSprites;
+import net.runelite.client.plugins.banktags.tabs.TagTab;
 import net.runelite.client.util.Text;
 
 @PluginDescriptor(
@@ -140,16 +141,7 @@ public class BankTagsPlugin extends Plugin implements BankTagsService
 	private BankTagsConfig config;
 
 	@Getter
-	private String activeTag;
-
-	@Getter
-	private BankTag activeBankTag;
-
-	@Getter
-	private Layout activeLayout;
-
-	@Getter
-	private int options;
+	private BankTag activeTag;
 
 	@Override
 	public void configure(Binder binder)
@@ -331,7 +323,7 @@ public class BankTagsPlugin extends Plugin implements BankTagsService
 				final int itemId = intStack[intStackSize - 1];
 				String searchfilter = stringStack[stringStackSize - 1];
 
-				BankTag tag = activeBankTag;
+				BankTag tag = activeTag;
 				boolean tagSearch = true;
 				// Shared storage uses ~bankmain_filteritem too. Allow using tag searches in it but don't
 				// apply the tag search from the active tab.
@@ -353,7 +345,7 @@ public class BankTagsPlugin extends Plugin implements BankTagsService
 					tag = buildSearchFilterBankTag(searchfilter);
 				}
 
-				if (itemId == -1 && activeLayout != null)
+				if (itemId == -1 && tag.layout() != null)
 				{
 					// item -1 always passes on a laid out tab so items can be dragged to it
 					return;
@@ -372,12 +364,12 @@ public class BankTagsPlugin extends Plugin implements BankTagsService
 				}
 				break;
 			case "getSearchingTagTab":
-				intStack[intStackSize - 1] = activeBankTag != null ? 1 : 0;
+				intStack[intStackSize - 1] = activeTag != null ? 1 : 0;
 				break;
 			case "bankBuildTab":
 				// Use the per-tab view when we want to hide the separators to avoid having to reposition items &
 				// recomputing the scroll height.
-				if (activeBankTag != null && (tabInterface.isTagTabActive() || config.removeSeparators() || activeLayout != null))
+				if (activeTag != null && (tabInterface.isTagTabActive() || config.removeSeparators() || activeTag.layout() != null))
 				{
 					var stack = client.getIntStack();
 					var sz = client.getIntStackSize();
@@ -463,28 +455,32 @@ public class BankTagsPlugin extends Plugin implements BankTagsService
 		}
 	}
 
-	public void openTag(String tag, Layout layout)
+	public void open(TagTab tab)
 	{
-		openTag(tag, layout, OPTION_ALLOW_MODIFICATIONS);
-	}
-
-	public void openTag(String tag, Layout layout, int options)
-	{
-		if (tag == null)
+		if (tab == null)
 		{
-			this.activeTag = null;
-			this.activeBankTag = null;
-			this.activeLayout = null;
-			this.options = 0;
+			activeTag = null;
 			return;
 		}
 
-		this.activeTag = tag;
-		this.activeBankTag = buildSearchFilterBankTag(tag);
-		this.activeLayout = layout;
-		this.options = options;
+		// custom tags are combined with the tab
+		final BankTag custom = tagManager.findTag(tab.getTag());
 
-		tabInterface.openTag(tag, layout, options, true);
+		activeTag = new BankTag()
+		{
+			@Override
+			public boolean contains(int itemId)
+			{
+				return tagManager.findTag(itemId, tab.getTag())
+					|| (custom != null && custom.contains(itemId));
+			}
+
+			@Override
+			public Layout layout()
+			{
+				return tab.getLayout();
+			}
+		};
 	}
 
 	private BankTag buildSearchFilterBankTag(String tag)
@@ -495,26 +491,19 @@ public class BankTagsPlugin extends Plugin implements BankTagsService
 			|| (custom != null && custom.contains(itemId));
 	}
 
-	public void openBankTag(String name)
-	{
-		openBankTag(name, OPTION_ALLOW_MODIFICATIONS);
-	}
-
 	@Override
-	public void openBankTag(String name, int options)
-	{
-		Layout layout = layoutManager.loadLayout(name);
-		openTag(name, layout, options);
-	}
-
-	@Override
-	public void closeBankTag()
+	public void openTagTab(TagTab tagTab)
 	{
 		tabInterface.closeTag(false);
-		this.activeTag = null;
-		this.activeBankTag = null;
-		this.activeLayout = null;
-		this.options = 0;
+		open(tagTab);
+		bankSearch.layoutBank();
+	}
+
+	@Override
+	public void openBankTag(BankTag bankTag)
+	{
+		tabInterface.closeTag(false);
+		activeTag = bankTag;
 		bankSearch.layoutBank();
 	}
 }

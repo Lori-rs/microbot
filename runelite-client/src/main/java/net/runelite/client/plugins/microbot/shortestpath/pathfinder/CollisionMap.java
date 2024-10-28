@@ -1,16 +1,16 @@
 package net.runelite.client.plugins.microbot.shortestpath.pathfinder;
 
-import net.runelite.api.coords.WorldPoint;
+import net.runelite.api.WorldType;
+import net.runelite.client.plugins.microbot.Microbot;
 import net.runelite.client.plugins.microbot.shortestpath.Transport;
-import net.runelite.client.plugins.microbot.shortestpath.TransportType;
 import net.runelite.client.plugins.microbot.shortestpath.WorldPointUtil;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Set;
 
 public class CollisionMap {
+
     // Enum.values() makes copies every time which hurts performance in the hotpath
     private static final OrdinalDirection[] ORDINAL_VALUES = OrdinalDirection.values();
 
@@ -75,40 +75,25 @@ public class CollisionMap {
     private final List<Node> neighbors = new ArrayList<>(16);
     private final boolean[] traversable = new boolean[8];
 
-    public List<Node> getNeighbors(Node node, VisitedTiles visited, PathfinderConfig config, WorldPoint target) {
+    public List<Node> getNeighbors(Node node, VisitedTiles visited, PathfinderConfig config) {
         final int x = WorldPointUtil.unpackWorldX(node.packedPosition);
         final int y = WorldPointUtil.unpackWorldY(node.packedPosition);
         final int z = WorldPointUtil.unpackWorldPlane(node.packedPosition);
 
-
         neighbors.clear();
 
         @SuppressWarnings("unchecked") // Casting EMPTY_LIST to List<Transport> is safe here
-        Set<Transport> transports = config.getTransportsPacked().getOrDefault(node.packedPosition, (Set<Transport>) Collections.EMPTY_SET);
+        List<Transport> transports = config.getTransportsPacked().getOrDefault(node.packedPosition, (List<Transport>) Collections.EMPTY_LIST);
 
-        // Transports are pre-filtered by PathfinderConfig.refreshTransports
+        // Transports are pre-filtered by PathfinderConfig.refreshTransportData
         // Thus any transports in the list are guaranteed to be valid per the user's settings
-        for (Transport transport : transports) {
-            //START microbot variables
+        for (int i = 0; i < transports.size(); ++i) {
+            Transport transport = transports.get(i);
             if (visited.get(transport.getDestination())) continue;
-
-            //EXCEPTION
-            if (transport.getType() == TransportType.MINECART) {
-                //avoid using minecart if you ned to go dwarven mines or mining guild
-                if (target.getRegionID() == 12183 || target.getRegionID() == 12184
-                        || target.getRegionID() == 12439 || target.getRegionID() == 12951) {
-                    continue;
-                }
-            }
-
-            if (transport.getType() != TransportType.TRANSPORT) {
-                neighbors.add(new TransportNode(transport.getDestination(), node, config.getDistanceBeforeUsingTeleport(), transport.getType(), transport.getDisplayInfo()));
-            } else {
-                neighbors.add(new TransportNode(transport.getDestination(), node, transport.getDuration(), transport.getType(), transport.getDisplayInfo()));
-            }
-            //END microbot variables
+            if (transport.isMember() && !Microbot.getClient().getWorldType().contains(WorldType.MEMBERS))
+                continue;
+            neighbors.add(new TransportNode(transport.getDestination(), node, transport.getWait()));
         }
-
 
         if (isBlocked(x, y, z)) {
             boolean westBlocked = isBlocked(x - 1, y, z);
@@ -147,14 +132,13 @@ public class CollisionMap {
             if (traversable[i]) {
                 neighbors.add(new Node(neighborPacked, node));
             } else if (Math.abs(d.x + d.y) == 1 && isBlocked(x + d.x, y + d.y, z)) {
-                // The transport starts from a blocked adjacent tile, e.g. fairy ring
-                // Only checks non-teleport transports (includes portals and levers, but not items and spells)
                 @SuppressWarnings("unchecked") // Casting EMPTY_LIST to List<Transport> is safe here
-                Set<Transport> neighborTransports = config.getTransportsPacked().getOrDefault(neighborPacked, (Set<Transport>) Collections.EMPTY_SET);
-                for (Transport transport : neighborTransports) {
-                    if (transport.getOrigin() == null || visited.get(transport.getOrigin())) {
+                List<Transport> neighborTransports = config.getTransportsPacked().getOrDefault(neighborPacked, (List<Transport>) Collections.EMPTY_LIST);
+                for (int t = 0; t < neighborTransports.size(); ++t) {
+                    Transport transport = neighborTransports.get(t);
+                    if (visited.get(transport.getOrigin())) continue;
+                    if (transport.isMember() && !Microbot.getClient().getWorldType().contains(WorldType.MEMBERS))
                         continue;
-                    }
                     neighbors.add(new Node(transport.getOrigin(), node));
                 }
             }

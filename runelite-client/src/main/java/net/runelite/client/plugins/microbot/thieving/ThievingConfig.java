@@ -78,8 +78,8 @@ public interface ThievingConfig extends Config {
 
     @ConfigItem(
             keyName = "Hitpoints",
-            name = "Eat at %",
-            description = "Use food below certain hitpoint percent",
+            name = "Hitpoints treshhold %",
+            description = "Use food at certain hitpoint treshhold",
             position = 1,
             section = food
     )

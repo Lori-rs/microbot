@@ -35,7 +35,7 @@ import javax.inject.Inject;
 import java.awt.*;
 
 @PluginDescriptor(
-        name = PluginDescriptor.Mocrosoft + "Tree runner",
+        name = PluginDescriptor.Mocrosoft + "Farming",
         description = "Microbot farming plugin",
         tags = {"farming", "microbot"},
         enabledByDefault = false,
